@@ -1,0 +1,23 @@
+### Login
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "password123"
+}
+
+###
+
+### Current user
+GET http://localhost:3000/api/auth/me
+
+###
+
+### Logout
+POST http://localhost:3000/api/auth/logout
+
+###
+
+### Current user after logout
+GET http://localhost:3000/api/auth/me
