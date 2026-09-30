@@ -7,6 +7,7 @@ import pgSession from 'connect-pg-simple';
 import { Pool } from 'pg';
 
 import authRouter from './routes/auth';
+import samplesRouter from './routes/samples';
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use(
 );
 
 app.use('/api/auth', authRouter);
+app.use('/api/samples', samplesRouter);
 
 app.get('/api/health', (_req, res) => {
     res.json({
