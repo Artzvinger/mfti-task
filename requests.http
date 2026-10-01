@@ -1,5 +1,9 @@
-### Login
-POST http://localhost:3000/api/auth/login
+### =========================
+### AUTH
+### =========================
+
+### Login admin
+POST http://127.0.0.1:3000/api/auth/login
 Content-Type: application/json
 
 {
@@ -9,15 +13,129 @@ Content-Type: application/json
 
 ###
 
-### Current user
-GET http://localhost:3000/api/auth/me
+### Проверяем текущего пользователя
+GET http://127.0.0.1:3000/api/auth/me
 
 ###
 
-### Logout
-POST http://localhost:3000/api/auth/logout
+### Получить список образцов
+GET http://127.0.0.1:3000/api/samples?page=1&limit=10
 
 ###
 
-### Current user after logout
-GET http://localhost:3000/api/auth/me
+### Получить второй страницы
+GET http://127.0.0.1:3000/api/samples?page=2&limit=10
+
+###
+
+### Фильтр по статусу
+GET http://127.0.0.1:3000/api/samples?status=completed&page=1&limit=10
+
+###
+
+### Сортировка по дате по возрастанию
+GET http://127.0.0.1:3000/api/samples?sort=receivedAt&order=asc&page=1&limit=10
+
+###
+
+### Сортировка по дате по убыванию
+GET http://127.0.0.1:3000/api/samples?sort=receivedAt&order=desc&page=1&limit=10
+
+###
+
+### Получить один образец
+GET http://127.0.0.1:3000/api/samples/1
+
+###
+
+### Несуществующий образец
+GET http://127.0.0.1:3000/api/samples/999999
+
+###
+
+### Неправильный ID
+GET http://127.0.0.1:3000/api/samples/abc
+
+###
+
+### Неправильная страница
+GET http://127.0.0.1:3000/api/samples?page=abc
+
+###
+
+### Неправильный статус
+GET http://127.0.0.1:3000/api/samples?status=wrong
+
+###
+
+### Слишком большой limit
+GET http://127.0.0.1:3000/api/samples?limit=101
+
+###
+
+### =========================
+### LOGOUT ADMIN
+### =========================
+
+### Выходим из admin
+POST http://127.0.0.1:3000/api/auth/logout
+
+###
+
+### После logout должен быть 401
+GET http://127.0.0.1:3000/api/auth/me
+
+###
+
+### После logout samples тоже должны быть 401
+GET http://127.0.0.1:3000/api/samples?page=1&limit=10
+
+###
+
+### =========================
+### LAB USER
+### =========================
+
+### Логинимся как обычный пользователь
+POST http://127.0.0.1:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "lab_user",
+  "password": "password123"
+}
+
+###
+
+### Проверяем пользователя
+GET http://127.0.0.1:3000/api/auth/me
+
+###
+
+### Получаем только свои образцы
+GET http://127.0.0.1:3000/api/samples?page=1&limit=10
+
+###
+
+### Фильтр своих образцов
+GET http://127.0.0.1:3000/api/samples?status=completed&page=1&limit=10
+
+###
+
+### Получаем образец из своей лаборатории
+GET http://127.0.0.1:3000/api/samples/1
+
+###
+
+### Получаем образец из другой лаборатории
+GET http://127.0.0.1:3000/api/samples/2
+
+###
+
+### Logout lab_user
+POST http://127.0.0.1:3000/api/auth/logout
+
+###
+
+### Проверяем что сессия закончилась
+GET http://127.0.0.1:3000/api/auth/me
