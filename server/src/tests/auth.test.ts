@@ -8,6 +8,33 @@ describe('Samples API authentication', () => {
         const response = await request(app).get('/api/samples');
 
         expect(response.status).toBe(401);
+        expect(response.body.message).toBe(
+            'Authentication required',
+        );
+    });
+});
+
+describe('Samples API success response', () => {
+    it('returns 200 for authenticated admin request', async () => {
+        const agent = request.agent(app);
+
+        const loginResponse = await agent
+            .post('/api/auth/login')
+            .send({
+                username: 'admin',
+                password: 'password123',
+            });
+
+        expect(loginResponse.status).toBe(200);
+
+        const response = await agent.get('/api/samples');
+
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body).toHaveProperty('total');
+        expect(response.body).toHaveProperty('page', 1);
+        expect(response.body).toHaveProperty('limit', 20);
+        expect(Array.isArray(response.body.data)).toBe(true);
     });
 });
 
@@ -27,7 +54,9 @@ describe('Samples API validation', () => {
         const response = await agent.get('/api/samples/abc');
 
         expect(response.status).toBe(400);
-        expect(response.body.message).toBe('Invalid sample id');
+        expect(response.body.message).toBe(
+            'Invalid sample id',
+        );
     });
 });
 
@@ -50,4 +79,3 @@ describe('Samples API permissions', () => {
         expect(response.body.message).toBe('Access denied');
     });
 });
-

@@ -1,75 +1,400 @@
-# React + TypeScript + Vite
+# MFTI Task
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Небольшое fullstack-приложение для просмотра лабораторных образцов.
 
-Currently, two official plugins are available:
+Стек:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+* React + TypeScript
+* Node.js + Express + TypeScript
+* PostgreSQL
+* Drizzle ORM
+* Docker
+* Vitest + Supertest
 
-## React Compiler
+## 1. Как запустить
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Через Docker
 
-## Expanding the ESLint configuration
+Нужен установленный Docker.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Из корня проекта выполнить:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+docker compose up --build
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Docker запускает три сервиса:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+* PostgreSQL
+* Backend
+* Frontend
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+После запуска:
 
+Frontend:
+
+```text
+http://localhost:5173
 ```
+
+Backend:
+
+```text
+http://localhost:3000
+```
+
+PostgreSQL:
+
+```text
+localhost:5432
+```
+
+При запуске backend автоматически выполняются миграции базы данных и seed.
+
+Seed создаёт:
+
+* 2 лаборатории
+* 2 пользователей
+* 10 000 образцов
+
+Для входа можно использовать:
+
+```text
+admin
+password123
+```
+
+или:
+
+```text
+lab_user
+password123
+```
+
+`admin` имеет доступ ко всем образцам.
+
+`lab_user` имеет доступ только к образцам своей лаборатории.
+
+Для остановки приложения:
+
+```bash
+docker compose down
+```
+
+Если нужно удалить также данные PostgreSQL:
+
+```bash
+docker compose down -v
+```
+
+### Локальный запуск без Docker
+
+Сначала нужно запустить PostgreSQL и создать базу `mfti_task`.
+
+В `server/.env` указать:
+
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mfti_task
+SESSION_SECRET=your-secret
+```
+
+Далее из папки `server`:
+
+```bash
+npm install
+npm run db:migrate
+npm run db:seed
+npm run dev
+```
+
+В отдельном терминале из корня проекта:
+
+```bash
+npm install
+npm run dev
+```
+
+Frontend будет доступен на:
+
+```text
+http://localhost:5173
+```
+
+## 2. Какие решения я принял и почему
+
+### База данных
+
+Использовал PostgreSQL, потому что данные приложения имеют обычную реляционную структуру: пользователи, лаборатории и образцы связаны между собой.
+
+Для работы с PostgreSQL выбрал Drizzle ORM.
+
+Мне было важно оставить запросы достаточно близкими к SQL и при этом иметь TypeScript-типы для таблиц. Drizzle подходит для небольшого проекта и не добавляет слишком много дополнительной абстракции.
+
+Схема базы находится в:
+
+```text
+server/src/db/schema.ts
+```
+
+Миграции находятся в:
+
+```text
+server/drizzle/
+```
+
+Тестовые данные создаются в:
+
+```text
+server/src/db/seed.ts
+```
+
+Seed генерирует 10 000 образцов программно, поэтому нет необходимости хранить большой объём тестовых данных в репозитории.
+
+### Структура проекта
+
+Frontend оставил небольшим и не стал добавлять сложную архитектуру.
+
+Основная логика приложения находится в:
+
+```text
+src/App.tsx
+```
+
+Стили находятся в:
+
+```text
+src/App.css
+src/index.css
+```
+
+Backend разделён на несколько простых частей:
+
+```text
+server/src/
+├── db/
+├── middleware/
+├── routes/
+├── tests/
+├── types/
+├── app.ts
+└── server.ts
+```
+
+`routes` содержит API-эндпоинты.
+
+`middleware` содержит проверку авторизации.
+
+`db` отвечает за подключение к базе, схему и seed.
+
+`tests` содержит API-тесты.
+
+`app.ts` создаёт и настраивает Express-приложение.
+
+`server.ts` запускает HTTP-сервер.
+
+Такое разделение также позволяет импортировать Express-приложение в тесты без запуска отдельного сервера.
+
+### Авторизация и проверка прав
+
+Используются серверные сессии.
+
+После успешного входа сервер сохраняет `userId` в сессии.
+
+При обращении к защищённым маршрутам сервер определяет текущего пользователя по сессии и получает его данные из базы.
+
+Для обычного пользователя используется `laboratoryId`.
+
+Например, при получении списка образцов сервер добавляет условие:
+
+```text
+samples.laboratoryId = user.laboratoryId
+```
+
+Поэтому пользователь лаборатории получает только свои образцы.
+
+Если пользователь пытается получить конкретный образец из другой лаборатории, сервер возвращает:
+
+```text
+403 Access denied
+```
+
+Таким образом, ограничение доступа проверяется на backend, а не только на frontend.
+
+### Пагинация и общее количество
+
+Для получения списка используется пагинация через `limit` и `offset`.
+
+Также поддерживаются:
+
+* фильтрация по статусу;
+* сортировка по дате получения;
+* сортировка по дате создания;
+* сортировка по возрастанию и убыванию.
+
+Общее количество записей получается отдельным запросом `COUNT(*)` с теми же условиями фильтрации.
+
+API возвращает данные примерно в таком формате:
+
+```json
+{
+  "data": [],
+  "total": 10000,
+  "page": 1,
+  "limit": 10
+}
+```
+
+`total` используется frontend для расчёта количества страниц.
+
+## 3. Что я сознательно не стал делать
+
+Не стал делать регистрацию пользователей, восстановление пароля, OAuth и другие способы входа, потому что это не требуется заданием.
+
+Не стал делать сложную систему ролей и разрешений. Для задачи достаточно двух пользователей с разным уровнем доступа.
+
+Не стал делать отдельную сложную архитектуру frontend. Приложение небольшое, поэтому один `App.tsx` проще поддерживать и объяснять.
+
+Не стал делать сложный дизайн. Основное внимание уделено API, базе данных, авторизации, правам доступа и работе со списком образцов.
+
+Не стал делать отдельный Dockerfile для PostgreSQL, потому что для базы достаточно официального образа PostgreSQL.
+
+Не стал делать CI/CD и отдельный production deployment, потому что это не требуется заданием.
+
+## 4. Где я сомневаюсь
+
+Сейчас frontend находится в одном `App.tsx`. Для такого небольшого задания это нормально, но если приложение продолжало бы развиваться, я бы вынес форму входа, таблицу и страницу образца в отдельные компоненты.
+
+В списке используется `offset`-пагинация. Для 10 000 записей этого достаточно. При очень больших объёмах данных можно было бы использовать cursor pagination.
+
+Также некоторые настройки сейчас заданы достаточно просто. Например, URL backend и CORS origin. Для production я бы вынес их в переменные окружения.
+
+## 5. Почему аутентификация устроена именно так
+
+Я выбрал серверные сессии.
+
+После успешного входа сервер создаёт сессию и связывает её с пользователем. В браузере хранится идентификатор сессии в cookie, а информация о пользователе остаётся на сервере.
+
+Для этой задачи серверные сессии показались проще JWT. Не нужно самостоятельно реализовывать логику отзыва токенов. Сервер может уничтожить сессию при выходе пользователя.
+
+Сессии хранятся в PostgreSQL через `connect-pg-simple`.
+
+Cookie настроена с:
+
+```text
+httpOnly
+sameSite=lax
+```
+
+`httpOnly` не позволяет JavaScript напрямую прочитать cookie.
+
+`sameSite=lax` ограничивает отправку cookie в кросс-сайтовых сценариях.
+
+Эти настройки сами по себе не означают полную защиту от XSS и CSRF, поэтому перед production я бы дополнительно проверил защиту приложения от этих атак.
+
+Сессия живёт 1 час.
+
+После истечения срока запрос к защищённому API возвращает `401`. Frontend очищает состояние пользователя и показывает сообщение:
+
+```text
+Сессия истекла. Войдите снова.
+```
+
+При выходе вызывается:
+
+```text
+POST /api/auth/logout
+```
+
+Сервер уничтожает текущую сессию, после чего cookie очищается.
+
+Так как сессия хранится на сервере, её можно отозвать до истечения срока действия.
+
+Пароли не хранятся в открытом виде. В базе хранится bcrypt-хеш пароля.
+
+Для тестового seed используется один пароль для двух пользователей, чтобы было проще проверять приложение.
+
+Перед production я бы:
+
+* использовал случайный `SESSION_SECRET`;
+* включил `secure: true` для cookie при HTTPS;
+* вынес URL frontend/backend и другие настройки в environment variables;
+* настроил HTTPS;
+* добавил защиту от перебора паролей;
+* более строго настроил CORS;
+* добавил CSRF-защиту, если она необходима для выбранной схемы;
+* не использовал тестовые пароли;
+* отдельно проверил настройки cookie и срок жизни сессии.
+
+## Тесты
+
+Добавил 4 API-теста.
+
+### 1. Неавторизованный запрос
+
+Запрос к:
+
+```text
+GET /api/samples
+```
+
+без авторизации должен вернуть:
+
+```text
+401
+```
+
+Проверяется защита API от неавторизованного доступа.
+
+### 2. Успешный запрос авторизованного пользователя
+
+Администратор авторизуется и получает список образцов.
+
+Проверяется:
+
+```text
+200
+```
+
+а также наличие:
+
+* `data`;
+* `total`;
+* `page`;
+* `limit`.
+
+Это проверяет основной успешный сценарий API.
+
+### 3. Некорректный идентификатор
+
+Запрос:
+
+```text
+GET /api/samples/abc
+```
+
+после авторизации должен вернуть:
+
+```text
+400
+```
+
+Проверяется валидация параметров API.
+
+### 4. Ограничение доступа между лабораториями
+
+`lab_user` пытается получить образец, который относится к другой лаборатории.
+
+Сервер должен вернуть:
+
+```text
+403
+```
+
+Проверяется, что пользователь не может получить чужой образец только изменив URL запроса.
+
+Запуск тестов:
+```bash
+cd server
+npm test
+```
+
