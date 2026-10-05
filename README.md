@@ -4,8 +4,8 @@
 
 Стек:
 
-* React + TypeScript
-* Node.js + Express + TypeScript
+* React + TypeScript + Zod + React-Hook-Form
+* Node.js + Express + TypeScript + Zod
 * PostgreSQL
 * Drizzle ORM
 * Docker
